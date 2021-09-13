@@ -7,12 +7,12 @@ pub struct BVec{
     values: Vec<u8>,
 }
 
-fn new() -> BVec{
+pub fn new() -> BVec{
 
     with_capacity(16)
 }
 
-fn with_capacity(capacity:usize)-> BVec{
+pub fn with_capacity(capacity:usize)-> BVec{
 
     let v = Vec::with_capacity(capacity);
     BVec{
