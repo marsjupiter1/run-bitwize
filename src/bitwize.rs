@@ -58,7 +58,7 @@ impl BVec{
         
         self.bits_per_value = newbits as u8;
         self.values = newvec.values;
-        println!("create replacement vector with capacity {}, new bits {}, low{}",needed,newbits,low);
+        //println!("create replacement vector with capacity {}, new bits {}, low{}",needed,newbits,low);
   
     }
 
