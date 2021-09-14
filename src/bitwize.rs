@@ -42,7 +42,6 @@ impl BVec{
     fn increase_bits(&mut self,newbits:usize){
         let needed = (self.capacity*newbits)/8+7;
         let  v = Vec::with_capacity(needed);
-        let mut low:u64 =!0;
         let mut newvec = BVec{
             bits_per_value: newbits as u8,
             capacity: self.capacity,
@@ -53,10 +52,7 @@ impl BVec{
        
             for i in 0..self.used{
                 let  v = self.get_element(i);
-                print!(" {} ",v);
-                if v < low{
-                    low = v;
-                }
+              
                 newvec.set_element(i, v);
             }
         
