@@ -53,6 +53,7 @@ impl BVec{
        
             for i in 0..self.used{
                 let  v = self.get_element(i);
+                print!(" {} ",v);
                 if v < low{
                     low = v;
                 }
