@@ -31,7 +31,7 @@ impl BVec{
         // 
          let needed = size * self.bits_per_value as usize/8+4;
          self.values.resize(needed,0);
-        for i in self.capacity..self.used-1{
+        for i in self.used..self.capacity-1{
             self.set_element(i,initvalue);
      }
     }  
@@ -53,35 +53,58 @@ impl BVec{
 
     pub fn set_element(&mut self,i:usize,v:u64){
 
-        let bits_in_v = ((v+1) as f64).log2() as usize;
-
-        if bits_in_v > self.bits_per_value as usize{
+        let bits_in_v = 1+((v as f64).log2() as usize);
+         if bits_in_v > self.bits_per_value as usize{
             self.increase_bits(bits_in_v);
         }
         let bit_start = self.bits_per_value as usize *i;
-        let byte_start = 8 * (bit_start/8);
+        let byte_start_bits = 8 * (bit_start/8);
         let mut mask:u64 = !0;
-        let shift= bit_start-byte_start;
+        let shift= bit_start-byte_start_bits;
         let bit_mask = ((2 as u64).pow(self.bits_per_value as u32)-1)>>shift;
         mask = mask ^ bit_mask;
+        //println!("mask {:#x} v{} shift{} bit_start{} byte_start {}",mask,v,shift,bit_start,byte_start_bits);
         unsafe{
-            let ptr = std::ptr::addr_of_mut!(self.values[0]).offset(byte_start as isize) as *mut u64 ;
+            let ptr = std::ptr::addr_of_mut!(self.values[0]).offset((byte_start_bits/8) as isize) as *mut u64 ;
        
-            *ptr = (*ptr)&mask | (v>>(shift as u32)); 
+            *ptr = (*ptr)&mask | (v<<(shift as u32)); 
         }
     }
 
     pub fn get_element(&self,i:usize) -> u64{
 
        let bit_start = self.bits_per_value as usize *i;
-       let byte_start = 8 * (bit_start/8);
-       let shift= bit_start-byte_start;
-       let bit_mask = (((2 as usize).pow(self.bits_per_value as u32)-1)>>shift) as u64;
+       let byte_start_bits = 8 * (bit_start/8);
+       let shift= bit_start-byte_start_bits;
+       let bit_mask = (((2 as usize).pow(self.bits_per_value as u32)-1)<<shift) as u64;
+       println!("read: mask {:#x} shift{} bit_start{} byte_start {}",bit_mask,shift,bit_start,byte_start_bits);
+ 
        unsafe{
     
-          let ptr = std::ptr::addr_of!(self.values[0]).offset(byte_start as isize) as *const u64;
-          (((*ptr) & bit_mask)<< shift as u32) as u64
+          let ptr = std::ptr::addr_of!(self.values[0]).offset((byte_start_bits/8) as isize) as *const u64;
+          (((*ptr) & bit_mask)>> shift as u32) as u64
        }
+   }
+
+   pub fn dump(&self){
+       for it in &self.values{
+           print!(" {} ",*it)
+       }
+       println!();
    }
 }
 
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn it_works() {
+        let mut v = new();
+        v.resize(10,0);
+        v.set_element(3,2);
+        v.dump();
+        let r = v.get_element(3);
+        assert_eq!(r,2);
+    }
+}
