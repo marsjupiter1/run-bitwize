@@ -15,7 +15,7 @@ pub fn new() -> BVec{
 
 pub fn with_capacity(capacity:usize)-> BVec{
 
-    let bits = 2;
+    let bits = 7;
     let v = Vec::with_capacity(capacity*bits/8+1);
     BVec{
         bits_per_value: bits as u8,
@@ -37,15 +37,18 @@ impl BVec{
     }  
 
     fn increase_bits(&mut self,newbits:usize){
-        let  v = Vec::with_capacity(self.capacity*newbits/8+1);
+        let  v = Vec::with_capacity(self.capacity*newbits/8+8);
         let mut newvec = BVec{
             bits_per_value: newbits as u8,
             capacity: self.capacity,
             used: self.used,
             values: v   
         };
-        for i in 0..self.used-1{
-            newvec.set_element(i, self.get_element(i));
+        newvec.resize(self.capacity,0);
+        if self.used > 0{
+            for i in 0..self.used-1{
+                newvec.set_element(i, self.get_element(i));
+            }
         }
         self.bits_per_value = newbits as u8;
         self.values = newvec.values;
@@ -57,13 +60,16 @@ impl BVec{
          if bits_in_v > self.bits_per_value as usize{
             self.increase_bits(bits_in_v);
         }
+        if i > self.used{
+            self.used = i;
+        }
         let bit_start = self.bits_per_value as usize *i;
         let byte_start_bits = 8 * (bit_start/8);
         let mut mask:u64 = !0;
         let shift= bit_start-byte_start_bits;
-        let bit_mask = ((2 as u64).pow(self.bits_per_value as u32)-1)>>shift;
+        let bit_mask = ((2 as u64).pow(self.bits_per_value as u32)-1)<<shift;
         mask = mask ^ bit_mask;
-        //println!("mask {:#x} v{} shift{} bit_start{} byte_start {}",mask,v,shift,bit_start,byte_start_bits);
+        println!("{} mask {:#x} bitmask {:#x} v{} shift{} bit_start{} byte_start {}",i,mask,bit_mask,v,shift,bit_start,byte_start_bits/8);
         unsafe{
             let ptr = std::ptr::addr_of_mut!(self.values[0]).offset((byte_start_bits/8) as isize) as *mut u64 ;
        
@@ -77,7 +83,7 @@ impl BVec{
        let byte_start_bits = 8 * (bit_start/8);
        let shift= bit_start-byte_start_bits;
        let bit_mask = (((2 as usize).pow(self.bits_per_value as u32)-1)<<shift) as u64;
-       println!("read: mask {:#x} shift{} bit_start{} byte_start {}",bit_mask,shift,bit_start,byte_start_bits);
+       println!("read: {} mask {:#x} shift{} bit_start{} byte_start {}",i,bit_mask,shift,bit_start,byte_start_bits/8);
  
        unsafe{
     
@@ -88,7 +94,7 @@ impl BVec{
 
    pub fn dump(&self){
        for it in &self.values{
-           print!(" {} ",*it)
+           print!(" {:#x} ",*it)
        }
        println!();
    }
@@ -101,10 +107,27 @@ mod tests {
     #[test]
     fn it_works() {
         let mut v = new();
-        v.resize(10,0);
+        v.resize(20,0);
         v.set_element(3,2);
         v.dump();
         let r = v.get_element(3);
         assert_eq!(r,2);
+
+        for i in 10..19 {
+            v.set_element(i , i as u64);
+            let r =v.get_element(i);
+            assert_eq!(r as usize,i);
+            v.dump();
+            for j in 10..i{
+                let r =v.get_element(j);
+                //println!("set {}[{}] == get {}[{}]",j,j,r,j);
+                assert_eq!(r as usize,j);
+            }
+        }
+
+        for i in 10..19 {
+            let r =v.get_element(i);
+            assert_eq!(r as usize,i);
+        }
     }
 }
