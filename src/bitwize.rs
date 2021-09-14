@@ -41,8 +41,8 @@ impl BVec{
 
     fn increase_bits(&mut self,newbits:usize){
         let needed = (self.capacity*newbits)/8+7;
-        println!("create replacement vector with capacity {},{}",needed,newbits);
         let  v = Vec::with_capacity(needed);
+        let mut low:u64 =!0;
         let mut newvec = BVec{
             bits_per_value: newbits as u8,
             capacity: self.capacity,
@@ -50,13 +50,19 @@ impl BVec{
             values: v   
         };
         newvec.resize(self.capacity,0);
-        if self.used > 0{
-            for i in 0..self.used-1{
-                newvec.set_element(i, self.get_element(i));
+       
+            for i in 0..self.used{
+                let  v = self.get_element(i);
+                if v < low{
+                    low = v;
+                }
+                newvec.set_element(i, v);
             }
-        }
+        
         self.bits_per_value = newbits as u8;
         self.values = newvec.values;
+        println!("create replacement vector with capacity {}, new bits {}, low{}",needed,newbits,low);
+  
     }
 
     pub fn set_element(&mut self,i:usize,v:u64){
